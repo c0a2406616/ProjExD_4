@@ -263,6 +263,13 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+                #　追加機能１：こうかとん高速化
+            # Shift を押したら高速化
+            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:
+                bird.speed = 20
+            # Shift を離したら元の速度に戻す
+            if event.type == pg.KEYUP   and event.key == pg.K_LSHIFT:                bird.speed = 10
+
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
