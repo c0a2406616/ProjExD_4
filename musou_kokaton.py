@@ -269,6 +269,20 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+class Gravity(pg.sprite.Sprite):
+    def __init__(self,life:int):
+        super().__init__()
+        self.life =life
+        self.image = pg.Surface((WIDTH,HEIGHT))
+        self.image.fill((0,0,0)) # 黒
+        self.image.set_alpha(100) # 透明度
+        self.rect = self.image.get_rect()
+    
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
 class EMP: #  追加始まり
     """
     EMPを発動、敵機と爆弾を無効化
@@ -299,10 +313,12 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    gravitys = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
     while True:
+        key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
@@ -389,6 +405,8 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        gravitys.update()
+        gravitys.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
