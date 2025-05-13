@@ -10,7 +10,7 @@ WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-  
+
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
@@ -135,15 +135,27 @@ class Bomb(pg.sprite.Sprite):
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height//2
         self.speed = 6
+        self.state = "active" #  追加した
+
+    def mukou(self): #  追加始まり
+        """
+        爆弾を無効化
+        動きを遅くして、状態をinactiveにする
+        """
+        self.speed //= 2
+        self.state = "inactive" #  追加終わり
 
     def update(self):
         """
         爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
         引数 screen：画面Surface
         """
-        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
+        if self.state == "inactive": #追加始まり
+            self.rect.move_ip(self.speed*self.vx, self.speed*self.vy) #  爆弾速度半減
+        else:
+            self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
-            self.kill()
+            self.kill() #  追加終わり
 
 
 class Beam(pg.sprite.Sprite):
@@ -220,6 +232,13 @@ class Enemy(pg.sprite.Sprite):
         self.state = "down"  # 降下状態or停止状態
         self.interval = random.randint(50, 300)  # 爆弾投下インターバル
 
+    def mukou(self): #追加始まり
+        """
+        敵機を無効化
+        """
+        self.interval = float("inf")
+        self.image = pg.transform.laplacian(self.image) #  追加終わり
+
     def update(self):
         """
         敵機を速度ベクトルself.vyに基づき移動（降下）させる
@@ -250,21 +269,24 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
-  # 追加機能２：重力場
-class Gravity(pg.sprite.Sprite):
-    def __init__(self,life:int):
-        super().__init__()
-        self.life =life
-        self.image = pg.Surface((WIDTH,HEIGHT))
-        self.image.fill((0,0,0)) # 黒
-        self.image.set_alpha(100) # 透明度
-        self.rect = self.image.get_rect()
-    
-    def update(self):
-        self.life -= 1
-        if self.life < 0:
-            self.kill()
+class EMP: #  追加始まり
+    """
+    EMPを発動、敵機と爆弾を無効化
+    """
+    def __init__(self, emys: pg.sprite.Group, bombs: pg.sprite.Group, screen: pg.Surface):
+        self.surface = pg.Surface((WIDTH, HEIGHT))
+        self.surface.set_alpha(128)  # 半透明
+        self.surface.fill((255, 255, 0))  # 黄色
 
+        for emy in emys:  # 敵機の無効化
+            emy.mukou()
+    
+        for bomb in bombs:  # 爆弾の無効化
+            bomb.mukou()
+
+        screen.blit(self.surface, (0, 0))
+        pg.display.update()
+        time.sleep(0.05) #  追加終わり
 
 def main():
     pg.display.set_caption("真！こうかとん無双")
@@ -277,13 +299,10 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-    gravitys = pg.sprite.Group()  # 追加機能２：重力場グループ
-
 
     tmr = 0
     clock = pg.time.Clock()
     while True:
-        key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
@@ -359,6 +378,7 @@ def main():
         if tmr%500 == 0:
             bird.state ="normal"       
 
+
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
@@ -366,8 +386,6 @@ def main():
         emys.draw(screen)
         bombs.update()
         bombs.draw(screen)
-        gravitys.update()
-        gravitys.draw(screen)
         exps.update()
         exps.draw(screen)
         score.update(screen)
@@ -381,3 +399,4 @@ if __name__ == "__main__":
     main()
     pg.quit()
     sys.exit()
+    
